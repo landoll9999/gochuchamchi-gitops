@@ -1,0 +1,21 @@
+# 기존에 ASG로 하던 "트래픽 늘면 인스턴스 늘리기"를
+# Pod 단위로 대체하는 설정입니다. (metrics-server 애드온이 클러스터에 있어야 동작)
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: gochuchamchi-web-hpa
+  namespace: gochuchamchi
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: gochuchamchi-web
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

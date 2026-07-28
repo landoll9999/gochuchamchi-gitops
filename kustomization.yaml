@@ -1,0 +1,15 @@
+# Argo CD Image Updater가 git write-back을 하려면 애플리케이션이 Helm 또는 Kustomize
+# 타입이어야 함 (순수 매니페스트 디렉터리는 write-back 대상이 될 수 없음). 이 파일 하나만
+# 있으면 Argo CD가 이 저장소를 Kustomize 앱으로 인식하고, Image Updater는 새 이미지가
+# 감지될 때마다 `kustomize edit set image`로 아래 images.newTag만 갱신해서 커밋한다.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - deployment.yml
+  - service.yml
+  - hpa.yml
+
+images:
+  - name: dnjstjr504/gochuchamchi
+    newTag: b2bb4609b591e8000d410fca4774c3a1b7d06f33
