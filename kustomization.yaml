@@ -9,7 +9,6 @@ resources:
   - deployment.yml
   - service.yml
   - hpa.yml
-  - test-nginx.yml
 
 images:
   - name: dnjstjr504/gochuchamchi
