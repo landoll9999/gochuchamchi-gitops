@@ -1,0 +1,3 @@
+kustomize:
+  images:
+  - dnjstjr504/gochuchamchi:latest
