@@ -1,3 +1,3 @@
 kustomize:
   images:
-  - 307223751140.dkr.ecr.ap-northeast-2.amazonaws.com/gochuchamchi:latest
+  - 307223751140.dkr.ecr.ap-northeast-2.amazonaws.com/gochuchamchi:74a56ec4621c51986b29244a740277493bc68e8d
