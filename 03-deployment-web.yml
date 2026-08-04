@@ -1,0 +1,69 @@
+# 참고 사항 (실제 앱 코드/Dockerfile 확인 결과 반영):
+# 1. 이미지: GitHub Actions가 Docker Hub(dnjstjr504/gochuchamchi)로 빌드/푸시 -> Argo CD Image
+#    Updater가 새 태그를 감지해서 이 파일의 image 태그를 자동 갱신 (kustomization.yaml의
+#    images: 필드를 통해 오버라이드됨 - 이 파일에 적힌 태그는 초기값일 뿐).
+# 2. command: 원본 Dockerfile의 ENTRYPOINT가
+#    "--spring.config.location=file:/app/config/application.yml" 를 강제로 지정하는데,
+#    이 경로는 K8s에는 존재하지 않는 파일이라 그대로 두면 부팅에 실패한다.
+#    command를 오버라이드해서 이 옵션 없이 순수 jar만 실행 -> classpath의 application.yml +
+#    환경변수(ConfigMap/Secret)만으로 동작하게 함.
+# 3. DB_PASS는 Secret(gochuchamchi-db-secret)에서 주입 (평문으로 git에 올리지 않음).
+#    ConfigMap/Secret/Namespace/ServiceAccount는 이 저장소가 아니라 인프라 Terraform이 관리함.
+# 4. 헬스체크: 프로젝트에 spring-boot-actuator 의존성이 없어서 /actuator/health가 존재하지 않음.
+#    실제 존재하는 "/" (HomeController) 경로로 대체.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gochuchamchi-web
+  namespace: gochuchamchi
+  labels:
+    app: gochuchamchi-web
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: gochuchamchi-web
+  template:
+    metadata:
+      labels:
+        app: gochuchamchi-web
+    spec:
+      serviceAccountName: gochuchamchi-app
+      containers:
+        - name: gochuchamchi-web
+          image: 307223751140.dkr.ecr.ap-northeast-2.amazonaws.com/gochuchamchi:7a8891f72c57a36cc66b95a9d07291b70afc03fb
+          imagePullPolicy: Always
+          command: ["java", "-jar", "/app/app.jar"]
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: gochuchamchi-config
+            - secretRef:
+                name: gochuchamchi-db-app
+            - secretRef:
+                name: gochuchamchi-redis-secret
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "768Mi"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 40
+            periodSeconds: 20
