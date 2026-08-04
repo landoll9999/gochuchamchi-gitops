@@ -7,8 +7,11 @@
 #    이 경로는 K8s에는 존재하지 않는 파일이라 그대로 두면 부팅에 실패한다.
 #    command를 오버라이드해서 이 옵션 없이 순수 jar만 실행 -> classpath의 application.yml +
 #    환경변수(ConfigMap/Secret)만으로 동작하게 함.
-# 3. DB_PASS는 Secret(gochuchamchi-db-secret)에서 주입 (평문으로 git에 올리지 않음).
-#    ConfigMap/Secret/Namespace/ServiceAccount는 이 저장소가 아니라 인프라 Terraform이 관리함.
+# 3. DB_PASS는 Secret(gochuchamchi-db-app)에서, Redis AUTH는 Secret
+#    (gochuchamchi-redis-secret, 키 SPRING_DATA_REDIS_PASSWORD)에서 주입 — 평문으로 git에
+#    올리지 않음. 두 Secret 모두 인프라 Terraform이 관리한다(ConfigMap/Namespace/SA도 동일).
+#    ※ 이 저장소에 03-deployment-web.yml이 남아 있지만 kustomization.yaml의 resources에
+#      없어서 실제로는 적용되지 않는 잔재 파일이다. 수정은 반드시 이 파일에 할 것.
 # 4. 헬스체크: 프로젝트에 spring-boot-actuator 의존성이 없어서 /actuator/health가 존재하지 않음.
 #    실제 존재하는 "/" (HomeController) 경로로 대체.
 apiVersion: apps/v1
@@ -45,7 +48,9 @@ spec:
             - configMapRef:
                 name: gochuchamchi-config
             - secretRef:
-                name: gochuchamchi-db-secret
+                name: gochuchamchi-db-app
+            - secretRef:
+                name: gochuchamchi-redis-secret
           resources:
             requests:
               cpu: "250m"
