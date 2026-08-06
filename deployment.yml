@@ -58,15 +58,30 @@ spec:
             limits:
               cpu: "500m"
               memory: "768Mi"
+          # startupProbe로 "기동 중"과 "죽음"을 분리한다 (2026-08-06 추가).
+          # 왜 — 이 앱의 실제 기동 시간은 약 80초다(Spring 컨텍스트 48초 + OTel 자동계측
+          # 에이전트 부착). 그런데 livenessProbe가 initialDelaySeconds: 40 뒤부터 검사를
+          # 시작해서, 아직 부팅 중인 컨테이너를 죽여 버렸다. 재구축 당일 두 파드 모두
+          # exit 143(SIGTERM)으로 재시작했고, 노드가 느리거나 이미지 pull이 길어지면
+          # 기동 -> 강제종료 -> 재기동을 반복하는 크래시루프가 된다.
+          #
+          # startupProbe가 통과할 때까지 readiness/liveness는 아예 돌지 않으므로
+          # 두 probe의 initialDelaySeconds는 필요 없어진다. 기동 예산은
+          # periodSeconds × failureThreshold = 10초 × 24 = 240초로, 실측 80초의 3배를
+          # 준다. 이 예산을 넘기면 그건 느린 게 아니라 정말 실패한 것이다.
+          startupProbe:
+            httpGet:
+              path: /
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 24
           readinessProbe:
             httpGet:
               path: /
               port: 8080
-            initialDelaySeconds: 20
             periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /
               port: 8080
-            initialDelaySeconds: 40
             periodSeconds: 20
