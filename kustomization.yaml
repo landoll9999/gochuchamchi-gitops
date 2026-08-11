@@ -11,5 +11,5 @@ resources:
   - hpa.yml
 
 images:
-  - name: 307223751140.dkr.ecr.ap-northeast-2.amazonaws.com/gochuchamchi
+  - name: 828885965304.dkr.ecr.ap-northeast-2.amazonaws.com/gochuchamchi
     newTag: a45e6d791a007872996fd0f1c3b6d24c13939f2a
