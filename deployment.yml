@@ -37,11 +37,21 @@ spec:
         app: gochuchamchi-web
     spec:
       serviceAccountName: gochuchamchi-app
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: gochuchamchi-web
           image: 828885965304.dkr.ecr.ap-northeast-2.amazonaws.com/gochuchamchi:a45e6d791a007872996fd0f1c3b6d24c13939f2a
           imagePullPolicy: Always
           command: ["java", "-jar", "/app/app.jar"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           ports:
             - containerPort: 8080
           envFrom:
