@@ -39,7 +39,7 @@ spec:
       serviceAccountName: gochuchamchi-app
       containers:
         - name: gochuchamchi-web
-          image: 307223751140.dkr.ecr.ap-northeast-2.amazonaws.com/gochuchamchi:a45e6d791a007872996fd0f1c3b6d24c13939f2a
+          image: 828885965304.dkr.ecr.ap-northeast-2.amazonaws.com/gochuchamchi:a45e6d791a007872996fd0f1c3b6d24c13939f2a
           imagePullPolicy: Always
           command: ["java", "-jar", "/app/app.jar"]
           ports:
