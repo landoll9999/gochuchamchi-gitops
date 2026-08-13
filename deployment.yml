@@ -7,11 +7,12 @@
 #    이 경로는 K8s에는 존재하지 않는 파일이라 그대로 두면 부팅에 실패한다.
 #    command를 오버라이드해서 이 옵션 없이 순수 jar만 실행 -> classpath의 application.yml +
 #    환경변수(ConfigMap/Secret)만으로 동작하게 함.
-# 3. DB_PASS는 Secret(gochuchamchi-db-app)에서, Redis AUTH는 Secret
-#    (gochuchamchi-redis-secret, 키 SPRING_DATA_REDIS_PASSWORD)에서 주입 — 평문으로 git에
-#    올리지 않음. 두 Secret 모두 인프라 Terraform이 관리한다(ConfigMap/Namespace/SA도 동일).
-#    ※ 이 저장소에 03-deployment-web.yml이 남아 있지만 kustomization.yaml의 resources에
-#      없어서 실제로는 적용되지 않는 잔재 파일이다. 수정은 반드시 이 파일에 할 것.
+# 3. DB 자격증명은 이제 Secret으로 주입하지 않는다 (2026-08-13). 앱이 RDS IAM 토큰으로
+#    붙으므로 DB 비밀번호라는 것이 존재하지 않는다 — 15분짜리 토큰을 드라이버가 접속마다
+#    직접 발급받는다. DB_USER와 접속 URL은 ConfigMap(gochuchamchi-config)에서 온다.
+#    Redis AUTH만 Secret(gochuchamchi-redis-secret, 키 SPRING_DATA_REDIS_PASSWORD)에서
+#    주입한다 — 평문으로 git에 올리지 않음. ConfigMap/Secret/Namespace/SA는 인프라
+#    Terraform이 관리한다.
 # 4. 헬스체크: 프로젝트에 spring-boot-actuator 의존성이 없어서 /actuator/health가 존재하지 않음.
 #    실제 존재하는 "/" (HomeController) 경로로 대체.
 apiVersion: apps/v1
@@ -57,8 +58,13 @@ spec:
           envFrom:
             - configMapRef:
                 name: gochuchamchi-config
-            - secretRef:
-                name: gochuchamchi-db-app
+            # (2026-08-13) secretRef: gochuchamchi-db-app 을 제거했다.
+            #   앱이 DB 에 IAM 토큰으로 붙게 되면서 DB_PASS 가 필요 없어졌는데,
+            #   그대로 두면 쓰이지도 않는 DB 비밀번호가 파드 환경변수에 계속 남는다.
+            #   파드가 침해되면 그대로 읽히고, 토큰과 달리 만료도 없다.
+            #   ※ 이 Secret 은 인프라 저장소에서도 더 이상 만들지 않는다. 되살리려면
+            #     terraform 쪽 provisioning 부터 되돌려야 한다 (contract.tf 의
+            #     forbidden_refs 에 등록돼 있어 verify-contract 가 잡는다).
             - secretRef:
                 name: gochuchamchi-redis-secret
           resources:
