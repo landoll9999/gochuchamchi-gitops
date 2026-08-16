@@ -38,6 +38,21 @@ spec:
         app: gochuchamchi-web
     spec:
       serviceAccountName: gochuchamchi-app
+      # 두 복제본을 서로 다른 노드와 AZ에 최대한 분산한다. 한 노드 또는 한 AZ가
+      # 내려가도 다른 위치의 Pod가 ALB 요청을 계속 처리하게 한다.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: gochuchamchi-web
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: gochuchamchi-web
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000

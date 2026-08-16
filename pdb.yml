@@ -1,0 +1,12 @@
+# 자발적 Pod 축출(노드 drain, 노드 축소, 관리 작업) 중에도 최소 한 개의
+# 애플리케이션 Pod를 유지한다. 노드 자체 장애는 Deployment/HPA가 새 Pod를 만든다.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: gochuchamchi-web-pdb
+  namespace: gochuchamchi
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: gochuchamchi-web
