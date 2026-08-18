@@ -40,16 +40,25 @@ spec:
       serviceAccountName: gochuchamchi-app
       # 두 복제본을 서로 다른 노드와 AZ에 최대한 분산한다. 한 노드 또는 한 AZ가
       # 내려가도 다른 위치의 Pod가 ALB 요청을 계속 처리하게 한다.
+      #
+      # matchLabelKeys(pod-template-hash)가 없으면 롤링 업데이트 때 종료 중인
+      # 구세대 파드까지 분산 계산에 포함돼, 신세대 2개가 한 노드로 몰릴 수 있다
+      # (2026-08-18 기동 직후 Image Updater 롤링에서 실제 발생 — 노드 2개인데
+      # 신파드 2개가 같은 노드에 배치됨). 세대별로 따로 계산하도록 고정한다.
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
           whenUnsatisfiable: DoNotSchedule
+          matchLabelKeys:
+            - pod-template-hash
           labelSelector:
             matchLabels:
               app: gochuchamchi-web
         - maxSkew: 1
           topologyKey: topology.kubernetes.io/zone
           whenUnsatisfiable: DoNotSchedule
+          matchLabelKeys:
+            - pod-template-hash
           labelSelector:
             matchLabels:
               app: gochuchamchi-web
