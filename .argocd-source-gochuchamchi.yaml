@@ -1,4 +1,4 @@
 kustomize:
   images:
   - 307223751140.dkr.ecr.ap-northeast-2.amazonaws.com/gochuchamchi:signed-a288da1f3d3b310af473cf4466a8b1d9c20435c1
-  - 828885965304.dkr.ecr.ap-northeast-2.amazonaws.com/gochuchamchi:signed-cf36dceae09e7d6f0d03313f05942bca60c0db58
+  - 828885965304.dkr.ecr.ap-northeast-2.amazonaws.com/gochuchamchi:signed-ed56bcf8e62a7587b5358d719fa5364d6afc8a39
