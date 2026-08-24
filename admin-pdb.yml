@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: gochuchamchi-admin-pdb
+  namespace: gochuchamchi
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: gochuchamchi-admin

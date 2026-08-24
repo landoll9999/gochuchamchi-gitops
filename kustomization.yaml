@@ -10,6 +10,9 @@ resources:
   - pdb.yml
   - service.yml
   - hpa.yml
+  - admin-deployment.yml
+  - admin-service.yml
+  - admin-pdb.yml
 
 images:
   - name: 828885965304.dkr.ecr.ap-northeast-2.amazonaws.com/gochuchamchi

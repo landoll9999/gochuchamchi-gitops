@@ -9,8 +9,8 @@
 #    환경변수(ConfigMap/Secret)만으로 동작하게 함.
 # 3. DB 자격증명은 이제 Secret으로 주입하지 않는다 (2026-08-13). 앱이 RDS IAM 토큰으로
 #    붙으므로 DB 비밀번호라는 것이 존재하지 않는다 — 15분짜리 토큰을 드라이버가 접속마다
-#    직접 발급받는다. DB_USER와 접속 URL은 ConfigMap(gochuchamchi-config)에서 온다.
-#    Redis AUTH만 Secret(gochuchamchi-redis-secret, 키 SPRING_DATA_REDIS_PASSWORD)에서
+#    직접 발급받는다. DB_USER와 접속 URL은 Web 전용 ConfigMap에서 온다.
+#    Redis AUTH만 Web 전용 Secret(키 SPRING_DATA_REDIS_PASSWORD)에서
 #    주입한다 — 평문으로 git에 올리지 않음. ConfigMap/Secret/Namespace/SA는 인프라
 #    Terraform이 관리한다.
 # 4. 헬스체크: 프로젝트에 spring-boot-actuator 의존성이 없어서 /actuator/health가 존재하지 않음.
@@ -37,7 +37,7 @@ spec:
       labels:
         app: gochuchamchi-web
     spec:
-      serviceAccountName: gochuchamchi-app
+      serviceAccountName: gochuchamchi-web
       # 두 복제본을 서로 다른 노드와 AZ에 최대한 분산한다. 한 노드 또는 한 AZ가
       # 내려가도 다른 위치의 Pod가 ALB 요청을 계속 처리하게 한다.
       #
@@ -81,16 +81,11 @@ spec:
             - containerPort: 8080
           envFrom:
             - configMapRef:
-                name: gochuchamchi-config
-            # (2026-08-13) secretRef: gochuchamchi-db-app 을 제거했다.
-            #   앱이 DB 에 IAM 토큰으로 붙게 되면서 DB_PASS 가 필요 없어졌는데,
-            #   그대로 두면 쓰이지도 않는 DB 비밀번호가 파드 환경변수에 계속 남는다.
-            #   파드가 침해되면 그대로 읽히고, 토큰과 달리 만료도 없다.
-            #   ※ 이 Secret 은 인프라 저장소에서도 더 이상 만들지 않는다. 되살리려면
-            #     terraform 쪽 provisioning 부터 되돌려야 한다 (contract.tf 의
-            #     forbidden_refs 에 등록돼 있어 verify-contract 가 잡는다).
+                name: gochuchamchi-web-config
+            # DB 비밀번호 Secret은 사용하지 않는다. MariaDB 드라이버가 Pod Identity로
+            # 15분짜리 RDS IAM 인증 토큰을 발급하므로 Redis 인증값만 주입한다.
             - secretRef:
-                name: gochuchamchi-redis-secret
+                name: gochuchamchi-web-redis-secret
           resources:
             requests:
               cpu: "250m"
@@ -111,17 +106,17 @@ spec:
           # 준다. 이 예산을 넘기면 그건 느린 게 아니라 정말 실패한 것이다.
           startupProbe:
             httpGet:
-              path: /
+              path: /internal/health
               port: 8080
             periodSeconds: 10
             failureThreshold: 24
           readinessProbe:
             httpGet:
-              path: /
+              path: /internal/health
               port: 8080
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /
+              path: /internal/health
               port: 8080
             periodSeconds: 20
