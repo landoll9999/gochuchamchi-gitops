@@ -16,4 +16,4 @@ resources:
 
 images:
   - name: 828885965304.dkr.ecr.ap-northeast-2.amazonaws.com/gochuchamchi
-    newTag: signed-a288da1f3d3b310af473cf4466a8b1d9c20435c1
+    newTag: signed-f198c3f8a63cba1f07512900976ad917f51dc1d6
