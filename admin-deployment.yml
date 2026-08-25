@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gochuchamchi-admin
+  namespace: gochuchamchi
+  labels:
+    app: gochuchamchi-admin
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: gochuchamchi-admin
+  template:
+    metadata:
+      labels:
+        app: gochuchamchi-admin
+    spec:
+      serviceAccountName: gochuchamchi-admin
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          matchLabelKeys: [pod-template-hash]
+          labelSelector:
+            matchLabels:
+              app: gochuchamchi-admin
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          matchLabelKeys: [pod-template-hash]
+          labelSelector:
+            matchLabels:
+              app: gochuchamchi-admin
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: gochuchamchi-admin
+          image: 828885965304.dkr.ecr.ap-northeast-2.amazonaws.com/gochuchamchi:a45e6d791a007872996fd0f1c3b6d24c13939f2a
+          imagePullPolicy: Always
+          command: ["java", "-jar", "/app/app.jar"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: gochuchamchi-admin-config
+            - secretRef:
+                name: gochuchamchi-admin-redis-secret
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "768Mi"
+          startupProbe:
+            httpGet:
+              path: /internal/health
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 24
+          readinessProbe:
+            httpGet:
+              path: /internal/health
+              port: 8080
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /internal/health
+              port: 8080
+            periodSeconds: 20

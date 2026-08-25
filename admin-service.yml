@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gochuchamchi-admin-svc
+  namespace: gochuchamchi
+spec:
+  type: ClusterIP
+  selector:
+    app: gochuchamchi-admin
+  ports:
+    - port: 80
+      targetPort: 8080
